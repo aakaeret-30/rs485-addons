@@ -1,0 +1,15 @@
+name: RS485 Sniffer
+slug: rs485_sniffer
+description: Sniffer RS485/Modbus traffic and publishes to MQTT
+version: "1.0.0"
+arch:
+  - aarch64
+  - armv7
+  - amd64
+startup: services
+boot: auto
+uart: true
+map:
+  - config:rw
+options: {}
+schema: {}
