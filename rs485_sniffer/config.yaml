@@ -1,12 +1,12 @@
 name: RS485 Sniffer
 slug: rs485_sniffer
 description: Sniffer RS485/Modbus traffic and publishes to MQTT
-version: "1.0.2"
+version: "1.0.3"
 
 arch:
   - aarch64
 
-boot: auto
+init: false
 
 build_from:
   aarch64: ghcr.io/home-assistant/aarch64-base-no-s6:latest
