@@ -3,11 +3,10 @@ slug: rs485_sniffer
 description: Sniffer RS485/Modbus traffic and publishes to MQTT
 version: "1.0.0"
 
-startup: services
-boot: auto
-
 arch:
   - aarch64
+
+boot: auto
 
 build_from:
   aarch64: ghcr.io/home-assistant/aarch64-base-python:3.12
