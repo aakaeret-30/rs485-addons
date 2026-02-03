@@ -1,18 +1,19 @@
-ARG BUILD_FROM
-FROM ${BUILD_FROM}
+FROM ghcr.io/home-assistant/aarch64-base:latest
 
-# Install Python + pip + required libs
+# Installer nødvendige Python-pakker via apk (IKKE pip)
 RUN apk add --no-cache \
     python3 \
-    py3-pip \
     py3-serial \
     py3-paho-mqtt
 
+# Arbejdsmappe
 WORKDIR /app
 
-COPY sniff_to_mqtt.py /app/sniff_to_mqtt.py
-COPY run.sh /run.sh
+# Kopiér applikationsfiler
+COPY run.sh sniff_to_mqtt.py /app/
 
-RUN chmod +x /run.sh
+# Sørg for at run.sh er eksekverbar
+RUN chmod +x /app/run.sh
 
-CMD ["/run.sh"]
+# Startpunkt (PID 1, ingen s6)
+CMD ["/app/run.sh"]
