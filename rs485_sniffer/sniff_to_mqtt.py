@@ -14,17 +14,35 @@ MQTT_PASS = "rs485test"
 
 client = mqtt.Client()
 client.username_pw_set(MQTT_USER, MQTT_PASS)
-client.connect(MQTT_HOST, MQTT_PORT, 60)
+
+while True:
+    try:
+        print("[mqtt] Connecting to broker...")
+        client.connect(MQTT_HOST, MQTT_PORT, 60)
+        print("[mqtt] Connected")
+        break
+    except Exception as e:
+        print(f"[mqtt] Not ready yet: {e}")
+        time.sleep(5)
+
 client.loop_start()
 
-ser = serial.Serial(
-    port=SERIAL_PORT,
-    baudrate=BAUDRATE,
-    bytesize=serial.EIGHTBITS,
-    parity=serial.PARITY_NONE,
-    stopbits=serial.STOPBITS_ONE,
-    timeout=0.2,
-)
+while True:
+    try:
+        print(f"[serial] Opening {SERIAL_PORT}")
+        ser = serial.Serial(
+            port=SERIAL_PORT,
+            baudrate=BAUDRATE,
+            bytesize=serial.EIGHTBITS,
+            parity=serial.PARITY_NONE,
+            stopbits=serial.STOPBITS_ONE,
+            timeout=0.2,
+        )
+        print("[serial] Opened")
+        break
+    except Exception as e:
+        print(f"[serial] Not ready yet: {e}")
+        time.sleep(5)
 
 buffer = bytearray()
 
@@ -80,7 +98,4 @@ while True:
     else:
         time.sleep(0.05)
 
-import time
 
-while True:
-    time.sleep(60)
