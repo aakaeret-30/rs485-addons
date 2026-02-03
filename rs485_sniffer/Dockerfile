@@ -1,6 +1,6 @@
-FROM ghcr.io/home-assistant/aarch64-base:latest
+ARG BUILD_FROM
+FROM ${BUILD_FROM}
 
-# Installer Python + nødvendige libs via apk (ingen pip)
 RUN apk add --no-cache \
     python3 \
     py3-pyserial \
