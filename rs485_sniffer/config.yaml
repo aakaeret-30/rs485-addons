@@ -1,7 +1,7 @@
 name: RS485 Sniffer
 slug: rs485_sniffer
 description: Sniffer RS485/Modbus traffic and publishes to MQTT
-version: "1.0.0"
+version: "1.0.1"
 
 arch:
   - aarch64
