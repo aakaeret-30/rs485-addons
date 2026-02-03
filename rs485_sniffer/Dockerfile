@@ -1,10 +1,12 @@
 ARG BUILD_FROM
-FROM $BUILD_FROM
+FROM ${BUILD_FROM}
 
-# Kopiér Python-script
-COPY sniff_to_mqtt.py /sniff_to_mqtt.py
+WORKDIR /app
 
-# Opret s6 service
-RUN mkdir -p /etc/services.d/rs485_sniffer
-COPY service_run /etc/services.d/rs485_sniffer/run
-RUN chmod +x /etc/services.d/rs485_sniffer/run
+RUN pip install --no-cache-dir pyserial paho-mqtt
+
+COPY sniff_to_mqtt.py /app/sniff_to_mqtt.py
+COPY run.sh /run.sh
+RUN chmod +x /run.sh
+
+CMD ["/run.sh"]
