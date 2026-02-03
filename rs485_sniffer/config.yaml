@@ -10,7 +10,9 @@ startup: application
 boot: auto
 init: false
 
-privileged: []
+privileged:
+  - SYS_RAWIO
+
 usb: true
 uart: true
 
@@ -18,7 +20,7 @@ devices:
   - /dev/serial/by-id/usb-FTDI_FT232R_USB_UART_AW6CH20W-if00-port0
 
 build_from:
-  aarch64: ghcr.io/home-assistant/aarch64-base-no-s6:latest
+  aarch64: ghcr.io/home-assistant/aarch64-base:latest
 
 options: {}
 schema: {}
