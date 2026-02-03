@@ -1,15 +1,17 @@
 name: RS485 Sniffer
 slug: rs485_sniffer
-description: Sniffer RS485/Modbus traffic and publishes to MQTT
-version: "1.0.6"
+version: "1.0.8"
 
 arch:
   - aarch64
 
 init: false
+privileged: true
+usb: true
+uart: true
+
+devices:
+  - /dev/serial/by-id/usb-FTDI_FT232R_USB_UART_AW6CH20W-if00-port0
 
 build_from:
   aarch64: ghcr.io/home-assistant/aarch64-base-no-s6:latest
-
-options: {}
-schema: {}
