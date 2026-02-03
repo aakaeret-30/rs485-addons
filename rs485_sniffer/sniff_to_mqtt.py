@@ -7,7 +7,7 @@ import paho.mqtt.client as mqtt
 SERIAL_PORT = "/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_AW6CH20W-if00-port0"
 BAUDRATE = 9600
 
-MQTT_HOST = "localhost"
+MQTT_HOST = "core-mosquitto"
 MQTT_PORT = 1883
 MQTT_USER = "rs485"
 MQTT_PASS = "rs485test"
