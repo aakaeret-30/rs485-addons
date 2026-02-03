@@ -1,20 +1,13 @@
 ARG BUILD_FROM
-FROM ${BUILD_FROM}
+FROM $BUILD_FROM
 
-# Sæt arbejdsmappe
-WORKDIR /app
-
-# Installer Python-pakker vi skal bruge
-RUN apk add --no-cache \
-    py3-pyserial \
-    py3-paho-mqtt
-
-# Kopiér filer ind i containeren
+# Kopiér add-on filer
 COPY run.sh /run.sh
-COPY sniff_to_mqtt.py /app/sniff_to_mqtt.py
+COPY sniff_to_mqtt.py /sniff_to_mqtt.py
 
-# Gør run.sh eksekverbar
 RUN chmod +x /run.sh
 
-# Start scriptet
-CMD ["/run.sh"]
+# s6 service definition
+RUN mkdir -p /etc/services.d/rs485_sniffer
+COPY service_run /etc/services.d/rs485_sniffer/run
+RUN chmod +x /etc/services.d/rs485_sniffer/run
