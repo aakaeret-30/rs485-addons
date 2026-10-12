@@ -1,9 +1,14 @@
 import serial
+import paho.mqtt.client as mqtt
 import time
 import binascii
 
+# --- KONFIGURATION FOR VARMEPUMPE ---
 SERIAL_PORT = "/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_AU0YA7RI-if00-port0"
 BAUDRATE = 9600
+MQTT_BROKER = "core-mosquitto"
+MQTT_TOPIC_LP = "valdemar/vp/lp"
+MQTT_TOPIC_LPC = "valdemar/vp/lpc"
 
 def beregn_crc(data):
     crc = 0xFFFF
@@ -17,39 +22,57 @@ def beregn_crc(data):
                 crc >>= 1
     return crc.to_bytes(2, byteorder='little')
 
-print(f"Starter dybsscanning på port: {SERIAL_PORT}", flush=True)
+# Opsætning af MQTT
+mqtt_client = mqtt.Client()
+try:
+    mqtt_client.connect(MQTT_BROKER, 1883, 60)
+    mqtt_client.loop_start()
+    print("MQTT Forbundet.", flush=True)
+except Exception as e:
+    print(f"MQTT fejl: {e}", flush=True)
+
+print(f"Åbner port til produktion: {SERIAL_PORT}", flush=True)
 try:
     ser = serial.Serial(
         port=SERIAL_PORT, baudrate=BAUDRATE,
         bytesize=serial.EIGHTBITS, parity=serial.PARITY_NONE,
-        stopbits=serial.STOPBITS_ONE, timeout=0.2
+        stopbits=serial.STOPBITS_ONE, timeout=1.0
     )
 except Exception as e:
     print(f"Kunne ikke åbne port: {e}", flush=True)
     exit(1)
 
-# Vi scanner en blok af gangen for at finde live-værdierne
-# Vi starter med at scanne adresse 20 til 70 (omkring de 40)
-start_adresse = 70
-antal_adresser = 50
+# Generer anmodninger (Func 03) for de to rigtige live-adresser
+# Adresse 95 (LP C) og Adresse 177 (LP)
+req_lpc = bytes([1, 3]) + int(95).to_bytes(2, byteorder='big') + bytes([0, 1])
+req_lpc += beregn_crc(req_lpc)
+
+req_lp = bytes([1, 3]) + int(177).to_bytes(2, byteorder='big') + bytes([0, 1])
+req_lp += beregn_crc(req_lp)
 
 while True:
-    print(f"\n--- Starter scanningsrunde fra adresse {start_adresse} til {start_adresse + antal_adresser} ---", flush=True)
-    for adr in range(start_adresse, start_adresse + antal_adresser):
-        # Byg Modbus-pakke til ID 1, Func 03, 1 register
-        pakke_data = bytes([1, 3]) + adr.to_bytes(2, byteorder='big') + bytes([0, 1])
-        fuld_pakke = pakke_data + beregn_crc(pakke_data)
-        
-        ser.write(fuld_pakke)
-        time.sleep(0.06)  # Hurtig afvikling
-        
-        if ser.in_waiting > 0:
-            svar = ser.read(ser.in_waiting)
-            if len(svar) >= 5 and svar[1] == 3:
-                # Konverter de to data-bytes til et tal
-                val = int.from_bytes(svar[3:5], byteorder='big', signed=True)
-                # Vi udskriver KUN hvis værdien IKKE er 0 eller 1, så vi slipper for støjen!
-                if val != 0 and val != 1:
-                    print(f"👉 Adresse {adr} svarede med rå værdi: {val} (svarende til {val*0.1:.1f})", flush=True)
-                    
-    time.sleep(5)
+    # 1. Hent LP C (Adresse 95)
+    ser.write(req_lpc)
+    time.sleep(0.3)
+    if ser.in_waiting > 0:
+        res = ser.read(ser.in_waiting)
+        if len(res) >= 5 and res[1] == 3:
+            val = int.from_bytes(res[3:5], byteorder='big', signed=True)
+            lpc_temp = val * 0.1
+            print(f"[Live] LP C Temperatur: {lpc_temp} °C", flush=True)
+            mqtt_client.publish(MQTT_TOPIC_LPC, str(lpc_temp))
+            
+    time.sleep(1.0)
+    
+    # 2. Hent LP (Adresse 177)
+    ser.write(req_lp)
+    time.sleep(0.3)
+    if ser.in_waiting > 0:
+        res = ser.read(ser.in_waiting)
+        if len(res) >= 5 and res[1] == 3:
+            val = int.from_bytes(res[3:5], byteorder='big', signed=True)
+            lp_bar = val * 0.1
+            print(f"[Live] LP Tryk: {lp_bar} bar", flush=True)
+            mqtt_client.publish(MQTT_TOPIC_LP, str(lp_bar))
+
+    time.sleep(3.4)
