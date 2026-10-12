@@ -1,0 +1,15 @@
+name: "Valdemar VP RS485 Sniffer"
+description: "Passiv sniffing af Valdemar Varmepumpe live data"
+version: "1.0.0"
+slug: "varmepumpe_sniffer"
+init: false
+arch:
+  - amd64
+  - i386
+  - armhf
+  - armv7
+  - aarch64
+options:
+  device: ""
+schema:
+  device: str
