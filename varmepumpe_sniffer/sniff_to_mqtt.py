@@ -17,40 +17,39 @@ def beregn_crc(data):
                 crc >>= 1
     return crc.to_bytes(2, byteorder='little')
 
-print(f"Starter automatisk Modbus-scanning på port: {SERIAL_PORT}", flush=True)
+print(f"Starter dybsscanning på port: {SERIAL_PORT}", flush=True)
 try:
     ser = serial.Serial(
         port=SERIAL_PORT, baudrate=BAUDRATE,
         bytesize=serial.EIGHTBITS, parity=serial.PARITY_NONE,
-        stopbits=serial.STOPBITS_ONE, timeout=0.3  # Hurtig timeout til scanning
+        stopbits=serial.STOPBITS_ONE, timeout=0.2
     )
 except Exception as e:
     print(f"Kunne ikke åbne port: {e}", flush=True)
     exit(1)
 
-# Definition af de mest sandsynlige test-scenarier ud fra dit dokument
-test_id_liste = [1, 2, 9]  # De mest brugte Slave ID'er på disse print
-test_adresser = [40, 177, 1, 100]  # LP C, LP, og klassiske startadresser
-funktionskoder = [3, 4]  # 3 = Holding, 4 = Input
+# Vi scanner en blok af gangen for at finde live-værdierne
+# Vi starter med at scanne adresse 20 til 70 (omkring de 40)
+start_adresse = 20
+antal_adresser = 50
 
 while True:
-    for slave_id in test_id_liste:
-        for func in funktionskoder:
-            for adr in test_adresser:
-                # Byg Modbus-pakke: ID (1 byte), Func (1 byte), Adresse (2 bytes), Antal (2 bytes: altid 00 01)
-                pakke_data = bytes([slave_id, func]) + adr.to_bytes(2, byteorder='big') + bytes([0, 1])
-                fuld_pakke = pakke_data + beregn_crc(pakke_data)
-                
-                print(f"[Scan] Prøver ID {slave_id} | Funktion 0{func} | Adresse {adr}...", flush=True)
-                ser.write(fuld_pakke)
-                time.sleep(0.15)
-                
-                if ser.in_waiting > 0:
-                    svar = ser.read(ser.in_waiting)
-                    hex_svar = " ".join(f"{b:02X}" for b in svar)
-                    print(f"💥 HURRA! Svar modtaget fra VP: {hex_svar} !!!", flush=True)
-                    print(f"-> Det virker med ID {slave_id}, Funktion 0{func}, Adresse {adr}", flush=True)
-                    while True: time.sleep(1) # Stop scanningen, vi fandt det!
+    print(f"\n--- Starter scanningsrunde fra adresse {start_adresse} til {start_adresse + antal_adresser} ---", flush=True)
+    for adr in range(start_adresse, start_adresse + antal_adresser):
+        # Byg Modbus-pakke til ID 1, Func 03, 1 register
+        pakke_data = bytes([1, 3]) + adr.to_bytes(2, byteorder='big') + bytes([0, 1])
+        fuld_pakke = pakke_data + beregn_crc(pakke_data)
+        
+        ser.write(fuld_pakke)
+        time.sleep(0.06)  # Hurtig afvikling
+        
+        if ser.in_waiting > 0:
+            svar = ser.read(ser.in_waiting)
+            if len(svar) >= 5 and svar[1] == 3:
+                # Konverter de to data-bytes til et tal
+                val = int.from_bytes(svar[3:5], byteorder='big', signed=True)
+                # Vi udskriver KUN hvis værdien IKKE er 0 eller 1, så vi slipper for støjen!
+                if val != 0 and val != 1:
+                    print(f"👉 Adresse {adr} svarede med rå værdi: {val} (svarende til {val*0.1:.1f})", flush=True)
                     
-    print("Scanning færdig uden svar. Starter forfra om 5 sekunder...", flush=True)
     time.sleep(5)
