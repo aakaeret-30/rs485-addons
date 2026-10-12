@@ -30,7 +30,7 @@ except Exception as e:
 
 # Vi scanner en blok af gangen for at finde live-værdierne
 # Vi starter med at scanne adresse 20 til 70 (omkring de 40)
-start_adresse = 150
+start_adresse = 70
 antal_adresser = 50
 
 while True:
