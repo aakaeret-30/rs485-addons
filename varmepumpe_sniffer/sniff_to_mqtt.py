@@ -2,7 +2,6 @@ import serial
 import paho.mqtt.client as mqtt
 import time
 import binascii
-import sys
 
 # --- KONFIGURATION FOR VARMEPUMPE ---
 SERIAL_PORT = "/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_AU0YA7RI-if00-port0"
@@ -10,14 +9,11 @@ BAUDRATE = 9600
 MQTT_BROKER = "core-mosquitto"
 MQTT_TOPIC_RAW = "valdemar/vp/raw"
 
-print("Starter Valdemar VP scanner...", flush=True)
-
-# Opsætning av MQTT
+# Opsætning af MQTT
 mqtt_client = mqtt.Client()
 try:
     mqtt_client.connect(MQTT_BROKER, 1883, 60)
     mqtt_client.loop_start()
-    print("MQTT Forbundet succesfuldt.", flush=True)
 except Exception as e:
     print(f"MQTT fejl: {e}", flush=True)
 
@@ -29,22 +25,21 @@ try:
         bytesize=serial.EIGHTBITS, parity=serial.PARITY_NONE,
         stopbits=serial.STOPBITS_ONE, timeout=1.0
     )
-    print("Seriel port åbnet uden fejl.", flush=True)
 except Exception as e:
     print(f"Kunne ikke åbne port: {e}", flush=True)
     exit(1)
 
-# En standard Modbus-forespørgsel (Læs Holding Register 40 / LP C)
-query_lpc = b'\x01\x03\x00\x28\x00\x01\x85\xC3'
+# TEST: Læs Input Register 177 (LP Værdi) med Funktionskode 04
+# hex: 01 (Slave ID) 04 (Read Input) 00 B1 (Adresse 177) 00 01 (Læs 1) 61 ED (CRC)
+query_lp_input = b'\x01\x04\x00\xB1\x00\x01\x61\xED'
 
 while True:
-    print("Sender forespørgsel efter LP C (Adresse 40)...", flush=True)
+    print("Sender forespørgsel efter LP via Input Register 177 (Func 04)...", flush=True)
     try:
-        ser.write(query_lpc)
+        ser.write(query_lp_input)
     except Exception as e:
-        print(f"Fejl ved afsendelse på ledning: {e}", flush=True)
+        print(f"Fejl ved afsendelse: {e}", flush=True)
     
-    # Vent kortvarigt på svar fra varmepumpen
     time.sleep(0.5)
     
     if ser.in_waiting > 0:
@@ -54,6 +49,6 @@ while True:
         print(f"RÅT SVAR FRA VP: {formatted_hex}", flush=True)
         mqtt_client.publish(MQTT_TOPIC_RAW, formatted_hex)
     else:
-        print("Intet svar modtaget fra varmepumpen (Timeout).", flush=True)
+        print("Intet svar modtaget fra varmepumpen (Timeout). Prøver om 5 sekunder...", flush=True)
         
     time.sleep(4.5)
