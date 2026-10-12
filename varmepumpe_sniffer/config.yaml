@@ -1,6 +1,6 @@
 name: "Valdemar VP RS485 Sniffer"
 description: "Passiv sniffing af Valdemar Varmepumpe live data"
-version: "1.1.1"
+version: "1.1.2"
 slug: "varmepumpe_sniffer"
 init: false
 uart: true
