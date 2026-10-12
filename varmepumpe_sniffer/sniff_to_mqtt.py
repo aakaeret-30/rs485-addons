@@ -53,4 +53,3 @@ while True:
         print("Intet svar modtaget fra varmepumpen (Timeout). Prøver om 5 sekunder...")
         
     time.sleep(4.5)
-        time.sleep(0.01)
